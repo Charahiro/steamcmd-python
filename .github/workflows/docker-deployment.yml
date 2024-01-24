@@ -34,11 +34,6 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Convert GitHub username to lowercase
-      id: username
-      run: echo "::set-output name=lowercase::$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')"
-  
-
     - name: Build and push
       uses: docker/build-push-action@v5
       with:
@@ -47,8 +42,8 @@ jobs:
         push: true
         tags: |
           charahiro/steamcmd-python:${{ matrix.python-version }}
-          ghcr.io/${{ steps.username.outputs.lowercase }}/${{ github.repository }}:${{ matrix.python-version }}
+          ghcr.io/charahiro-tan/${{ github.repository }}:${{ matrix.python-version }}
           ${{ matrix.python-version == env.latest_version && 'charahiro/steamcmd-python:latest' || '' }}
-          ${{ matrix.python-version == env.latest_version && 'ghcr.io/${{ steps.username.outputs.lowercase }}/${{ github.repository }}:latest' || '' }}
+          ${{ matrix.python-version == env.latest_version && 'ghcr.io/charahiro-tan/${{ github.repository }}:latest' || '' }}
         build-args: |
           PYTHON_VERSION=${{ matrix.python-version }}
