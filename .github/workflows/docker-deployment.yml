@@ -42,8 +42,8 @@ jobs:
         push: true
         tags: |
           charahiro/steamcmd-python:${{ matrix.python-version }}
-          ghcr.io/charahiro-tan/${{ github.repository }}:${{ matrix.python-version }}
+          ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${GITHUB_REPOSITORY,,}:${{ matrix.python-version }}
           ${{ matrix.python-version == env.latest_version && 'charahiro/steamcmd-python:latest' || '' }}
-          ${{ matrix.python-version == env.latest_version && 'ghcr.io/charahiro-tan/${{ github.repository }}:latest' || '' }}
+          ${{ matrix.python-version == env.latest_version && 'ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${GITHUB_REPOSITORY,,}:latest' || '' }}
         build-args: |
           PYTHON_VERSION=${{ matrix.python-version }}
