@@ -11,7 +11,7 @@ ARG PUID=1000
 ARG HOME_DIR="/home/${USER}"
 ARG STEAMCMD_DIR="${HOME_DIR}/steamcmd"
 
-RUN set -x \
+RUN set -eux \
         && apt-get update \
         && apt-get install -y --no-install-recommends --no-install-suggests \
             lib32stdc++6 \
