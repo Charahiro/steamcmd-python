@@ -34,10 +34,11 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Convert GitHub username amd repo to lowercase
+    - name: Set environment variables
       run: |
         echo "LOWER_CASE_REPOSITORY_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
         echo "LOWER_CASE_REPOSITORY=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+        echo "REPOSITORY_NAME=${GITHUB_REPOSITORY#${GITHUB_REPOSITORY_OWNER}/}" >> $GITHUB_ENV
 
     - name: Build and push
       uses: docker/build-push-action@v5
@@ -46,9 +47,9 @@ jobs:
         file: Dockerfile
         push: true
         tags: |
-          charahiro/steamcmd-python:${{ matrix.python-version }}
-          ghcr.io/${{ env.LOWER_CASE_REPOSITORY_OWNER }}/${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python-version }}
-          ${{ matrix.python-version == env.latest_version && 'charahiro/steamcmd-python:latest' || '' }}
-          ${{ matrix.python-version == env.latest_version && format('ghcr.io/{0}/{1}:latest', env.LOWER_CASE_REPOSITORY_OWNER, env.LOWER_CASE_REPOSITORY) || '' }}
+          charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
+          ghcr.io/${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python-version }}
+          ${{ matrix.python-version == env.latest_version && format('charahiro/{0}:latest', env.REPOSITORY_NAME) || '' }}
+          ${{ matrix.python-version == env.latest_version && format('ghcr.io/{0}:latest', env.LOWER_CASE_REPOSITORY) || '' }}
         build-args: |
           PYTHON_VERSION=${{ matrix.python-version }}
