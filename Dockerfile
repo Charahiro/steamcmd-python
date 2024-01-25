@@ -3,7 +3,9 @@ ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim-bookworm AS build_stage
 
 LABEL org.opencontainers.image.authors="charahiro <charahiro.tan@gmail.com>" \
-      org.opencontainers.image.source="https://github.com/Charahiro-tan/steamcmd-python"
+      org.opencontainers.image.source="https://github.com/Charahiro-tan/steamcmd-python" \
+      org.opencontainers.image.description="A Docker image that includes Python with steamcmd." \
+      org.opencontainers.image.licenses=MIT
 
 ENV USER=steam
 
