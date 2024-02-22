@@ -54,21 +54,22 @@ jobs:
         build-args: |
           PYTHON_VERSION=${{ matrix.python-version }}
 
-    - name: Get local image digest
+    - name: Get local image ID
       run: |
-        LOCAL_DIGEST=$(docker inspect --format='{{.RepoDigests}}' charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }})
-        echo "LOCAL_DIGEST=${LOCAL_DIGEST}" >> $GITHUB_ENV
-        echo "Local image digest: $LOCAL_DIGEST"
-        
+        LOCAL_IMAGE_ID=$(docker images --format '{{.ID}}' charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }})
+        echo "LOCAL_IMAGE_ID=${LOCAL_IMAGE_ID}" >> $GITHUB_ENV
+        echo "Local image ID: $LOCAL_IMAGE_ID"
+
     - name: Get remote image digest
       run: |
-        DIGEST=$(docker pull charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }} || true)
-        REMOTE_DIGEST=$(echo $DIGEST | grep 'Digest:' | awk '{print $2}')
-        echo "REMOTE_DIGEST=${REMOTE_DIGEST}" >> $GITHUB_ENV
+        export DOCKER_CLI_EXPERIMENTAL=enabled
+        REMOTE_DIGEST=$(docker manifest inspect charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }} --verbose | jq -r '.Descriptor.digest')
+        echo "REMOTE_DIGEST=$REMOTE_DIGEST" >> $GITHUB_ENV
         echo "Remote image digest: $REMOTE_DIGEST"
+      
 
     - name: Push image if digests are different
-      if: env.REMOTE_DIGEST != env.LOCAL_DIGEST
+      if: env.REMOTE_DIGEST != env.LOCAL_IMAGE_ID
       uses: docker/build-push-action@v5
       with:
         context: .
