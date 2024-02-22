@@ -63,7 +63,7 @@ jobs:
     - name: Get remote image digest
       run: |
         export DOCKER_CLI_EXPERIMENTAL=enabled
-        REMOTE_DIGEST=$(docker manifest inspect charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }} --verbose | jq -r '.config.digest')
+        REMOTE_DIGEST=$(docker manifest inspect charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }} --verbose | jq -r '.[0].Descriptor.digest')
         echo "REMOTE_DIGEST=$REMOTE_DIGEST" >> $GITHUB_ENV
         echo "Remote image digest: $REMOTE_DIGEST"
       
