@@ -50,7 +50,12 @@ jobs:
         file: Dockerfile
         load: true
         push: false
-        tags: charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
+        provenance: false
+        tags: |
+          charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
+          ghcr.io/${{ env.LOWER_CASE_REPOSITORY }}/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
+          ${{ matrix.python-version == env.latest_version && format('charahiro/{0}:latest', env.REPOSITORY_NAME) || '' }}
+          ${{ matrix.python-version == env.latest_version && format('ghcr.io/{0}/{1}:latest', env.LOWER_CASE_REPOSITORY, env.REPOSITORY_NAME) || '' }}
         build-args: |
           PYTHON_VERSION=${{ matrix.python-version }}
 
@@ -75,6 +80,7 @@ jobs:
         context: .
         file: Dockerfile
         push: true
+        provenance: false
         tags: |
           charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
           ghcr.io/${{ env.LOWER_CASE_REPOSITORY }}/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
