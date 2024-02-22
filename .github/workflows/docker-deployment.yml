@@ -43,7 +43,29 @@ jobs:
         echo "LOWER_CASE_REPOSITORY=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
         echo "REPOSITORY_NAME=${GITHUB_REPOSITORY#${GITHUB_REPOSITORY_OWNER}/}" >> $GITHUB_ENV
 
-    - name: Build and push
+    - name: Build Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: Dockerfile
+        load: true
+        tags: charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
+        build-args: |
+          PYTHON_VERSION=${{ matrix.python-version }}
+        platforms: linux/amd64,linux/arm64
+
+    - name: Get local image digest
+      id: localdigest
+      run: echo "::set-output name=digest::$(docker inspect --format='{{.RepoDigests}}' charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }})"
+
+    - name: Get remote image digest
+      id: remotedigest
+      run: |
+        DIGEST=$(docker pull charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }} || true)
+        echo "::set-output name=digest::$(echo $DIGEST | grep 'Digest:' | awk '{print $2}')"
+
+    - name: Push image if digests are different
+      if: steps.localdigest.outputs.digest != steps.remotedigest.outputs.digest
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -56,3 +78,4 @@ jobs:
           ${{ matrix.python-version == env.latest_version && format('ghcr.io/{0}/{1}:latest', env.LOWER_CASE_REPOSITORY, env.REPOSITORY_NAME) || '' }}
         build-args: |
           PYTHON_VERSION=${{ matrix.python-version }}
+        platforms: linux/amd64,linux/arm64
