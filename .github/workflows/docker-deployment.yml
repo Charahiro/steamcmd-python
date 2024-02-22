@@ -78,4 +78,3 @@ jobs:
           ${{ matrix.python-version == env.latest_version && format('ghcr.io/{0}/{1}:latest', env.LOWER_CASE_REPOSITORY, env.REPOSITORY_NAME) || '' }}
         build-args: |
           PYTHON_VERSION=${{ matrix.python-version }}
-        platforms: linux/amd64,linux/arm64
