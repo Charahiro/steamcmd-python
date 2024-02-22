@@ -49,10 +49,10 @@ jobs:
         context: .
         file: Dockerfile
         load: true
+        push: false
         tags: charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
         build-args: |
           PYTHON_VERSION=${{ matrix.python-version }}
-        platforms: linux/amd64,linux/arm64
 
     - name: Get local image digest
       id: localdigest
