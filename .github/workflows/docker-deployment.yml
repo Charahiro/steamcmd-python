@@ -11,8 +11,8 @@ jobs:
     permissions:
       contents: write
     env:
-      python-target: "3.10,3.11,3.12"
-      latest-version: '3.12'
+      python_target: "3.10,3.11,3.12"
+      latest_version: '3.12'
     
     steps:
       - name: Checkout code
@@ -35,7 +35,7 @@ jobs:
         run: |
           original_ifs=$IFS
           IFS=","
-          for ver in $python-target; do
+          for ver in $python_target; do
             sha=$(docker manifest inspect python:$ver-slim-bookworm --verbose | jq -r '.[0].Descriptor.digest')
             echo "PYTHON_$ver=$sha" >> $GITHUB_ENV
           done
@@ -50,14 +50,14 @@ jobs:
           steamcmd_old_version=$(cat version.json | jq -r ".Steamcmd")
           if [ "$steamcmd_old_version" != "$STEAMCMD_VER" ]; then
             jq --arg STEAMCMD_VER "$STEAMCMD_VER" '.Steamcmd=$STEAMCMD_VER' version.json > version.json.tmp && mv version.json.tmp version.json
-            for ver in $python-target; do
+            for ver in $python_target; do
               change_ver+=("$ver")
               python_sha="PYTHON_$ver"
               new_sha=$(printenv "$python_sha")
               jq --arg ver "$ver" --arg new_sha "$new_sha" '.Python[$ver]=$new_sha' version.json > version.json.tmp && mv version.json.tmp version.json
             done
           else
-            for ver in $python-target; do
+            for ver in $python_target; do
               old_python_sha=$(jq -r --arg ver "$ver" '.Python[$ver]' version.json)
               python_sha="PYTHON_$ver"
               new_sha=$(printenv "$python_sha")
@@ -80,7 +80,7 @@ jobs:
 
             targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)
             echo "::set-output name=targets::$targets"
-            echo "::set-output name=latest-version::$latest-version"
+            echo "::set-output name=latest_version::$latest_version"
           else
             echo "No change"
             exit 1
@@ -92,10 +92,10 @@ jobs:
       contents: read
       packages: write
     env:
-      latest-version: ${{ needs.check-version.outputs.latest-version }}
+      latest_version: ${{ needs.check-version.outputs.latest_version }}
     strategy:
       matrix:
-        python-version: ${{ fromJson(needs.check-version.outputs.targets) }}
+        python_version: ${{ fromJson(needs.check-version.outputs.targets) }}
 
     steps:
     - name: Checkout code
@@ -135,9 +135,9 @@ jobs:
         no-cache: true
         pull: true
         tags: |
-          charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
-          ghcr.io/${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python-version }}
-          ${{ matrix.python-version == env.latest_version && format('charahiro/{0}:latest', env.REPOSITORY_NAME) || '' }}
-          ${{ matrix.python-version == env.latest_version && format('ghcr.io/{0}:latest', env.LOWER_CASE_REPOSITORY) || '' }}
+          charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python_version }}
+          ghcr.io/${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python_version }}
+          ${{ matrix.python_version == env.latest_version && format('charahiro/{0}:latest', env.REPOSITORY_NAME) || '' }}
+          ${{ matrix.python_version == env.latest_version && format('ghcr.io/{0}:latest', env.LOWER_CASE_REPOSITORY) || '' }}
         build-args: |
-          PYTHON_VERSION=${{ matrix.python-version }}
+          PYTHON_VERSION=${{ matrix.python_version }}
