@@ -46,7 +46,7 @@ jobs:
     - name: Get remote old image digest
       run: |
         export DOCKER_CLI_EXPERIMENTAL=enabled
-        REMOTE_DIGEST=$(docker manifest inspect ghcr.io/temp-${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python-version }} --verbose | jq -r '.Descriptor.digest')
+        REMOTE_DIGEST=$(docker manifest inspect ghcr.io/${{ env.LOWER_CASE_REPOSITORY_OWNER }}/temp-${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }} --verbose | jq -r '.Descriptor.digest')
         echo "OLD_REMOTE_DIGEST=$REMOTE_DIGEST" >> $GITHUB_ENV
         echo "Remote old image digest: $OLD_REMOTE_DIGEST"
 
@@ -57,15 +57,15 @@ jobs:
         file: Dockerfile
         push: true
         provenance: false
-        tags: ghcr.io/temp-${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python-version }}
+        tags: ghcr.io/${{ env.LOWER_CASE_REPOSITORY_OWNER }}/temp-${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
         build-args: |
           PYTHON_VERSION=${{ matrix.python-version }}
 
-    - name: Get remote old image digest
+    - name: Get remote new image digest
       run: |
         sleep 10
         export DOCKER_CLI_EXPERIMENTAL=enabled
-        REMOTE_DIGEST=$(docker manifest inspect ghcr.io/temp-${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python-version }} --verbose | jq -r '.Descriptor.digest')
+        REMOTE_DIGEST=$(docker manifest inspect ghcr.io/${{ env.LOWER_CASE_REPOSITORY_OWNER }}/temp-${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }} --verbose | jq -r '.Descriptor.digest')
         echo "NEW_REMOTE_DIGEST=$REMOTE_DIGEST" >> $GITHUB_ENV
         echo "Remote new image digest: $NEW_REMOTE_DIGEST"
 
