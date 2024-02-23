@@ -42,6 +42,7 @@ jobs:
           IFS=$original_ifs
   
       - name: Check version
+        id: check-version
         run: |
           original_ifs=$IFS
           IFS=","
@@ -78,9 +79,8 @@ jobs:
             git commit -m "change version"
             git push origin main
 
-            targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)
-            echo "::set-output name=targets::$targets"
-            echo "::set-output name=latest_version::$latest_version"
+            echo "targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
+            echo "latest_version=$latest_version" >> $GITHUB_OUTPUT
           else
             echo "No change"
             exit 1
@@ -92,10 +92,10 @@ jobs:
       contents: read
       packages: write
     env:
-      latest_version: ${{ needs.check-version.outputs.latest_version }}
+      latest_version: ${{ steps.check-version.outputs.latest_version }}
     strategy:
       matrix:
-        python_version: ${{ fromJson(needs.check-version.outputs.targets) }}
+        python_version: ${{ fromJson(steps.check-version.outputs.targets) }}
 
     steps:
     - name: Checkout code
