@@ -6,16 +6,96 @@ on:
   workflow_dispatch:
 
 jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      python-target: "3.10,3.11,3.12"
+      latest-version: '3.12'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+  
+      - name: apt update
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends --no-install-suggests \
+            lib32stdc++6 lib32gcc-s1 ca-certificates
+  
+      - name: Get SteamCMD version
+        run: |
+          mkdir -p ~/steamcmd
+          curl -fsSL 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz' | tar xvzf - -C ~/steamcmd
+          STEAMCMD_VER=$(~/steamcmd/steamcmd.sh +quit | awk '/version [0-9]+/ {print $9}')
+          echo "STEAMCMD_VER=$STEAMCMD_VER" >> $GITHUB_ENV
+  
+      - name: Get docker digest
+        run: |
+          original_ifs=$IFS
+          IFS=","
+          for ver in $python-target; do
+            sha=$(docker manifest inspect python:$ver-slim-bookworm --verbose | jq -r '.[0].Descriptor.digest')
+            echo "PYTHON_$ver=$sha" >> $GITHUB_ENV
+          done
+          IFS=$original_ifs
+  
+      - name: Check version
+        run: |
+          original_ifs=$IFS
+          IFS=","
+          change_ver=()
+          
+          steamcmd_old_version=$(cat version.json | jq -r ".Steamcmd")
+          if [ "$steamcmd_old_version" != "$STEAMCMD_VER" ]; then
+            jq --arg STEAMCMD_VER "$STEAMCMD_VER" '.Steamcmd=$STEAMCMD_VER' version.json > version.json.tmp && mv version.json.tmp version.json
+            for ver in $python-target; do
+              change_ver+=("$ver")
+              python_sha="PYTHON_$ver"
+              new_sha=$(printenv "$python_sha")
+              jq --arg ver "$ver" --arg new_sha "$new_sha" '.Python[$ver]=$new_sha' version.json > version.json.tmp && mv version.json.tmp version.json
+            done
+          else
+            for ver in $python-target; do
+              old_python_sha=$(jq -r --arg ver "$ver" '.Python[$ver]' version.json)
+              python_sha="PYTHON_$ver"
+              new_sha=$(printenv "$python_sha")
+              if [ "$old_python_sha" != "$new_sha" ]; then
+                change_ver+=("$ver")
+                jq --arg ver "$ver" --arg new_sha "$new_sha" '.Python[$ver]=$new_sha' version.json > version.json.tmp && mv version.json.tmp version.json
+              fi
+            done
+          fi
+          
+          IFS=$original_ifs
+  
+          if [ ${#change_ver[@]} -ne 0 ]; then
+            echo "Change ver=${change_ver[@]}"
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add .
+            git commit -m "change version"
+            git push origin main
+
+            targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)
+            echo "::set-output name=targets::$targets"
+            echo "::set-output name=latest-version::$latest-version"
+          else
+            echo "No change"
+            exit 1
+          fi
+
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     env:
-      latest_version: '3.12'
+      latest-version: ${{ needs.check-version.outputs.latest-version }}
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", '3.12']
+        python-version: ${{ fromJson(needs.check-version.outputs.targets) }}
 
     steps:
     - name: Checkout code
@@ -43,36 +123,9 @@ jobs:
         echo "LOWER_CASE_REPOSITORY=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
         echo "REPOSITORY_NAME=${GITHUB_REPOSITORY#${GITHUB_REPOSITORY_OWNER}/}" >> $GITHUB_ENV
 
-    - name: Get remote old image digest
-      run: |
-        export DOCKER_CLI_EXPERIMENTAL=enabled
-        OLD_REMOTE_DIGEST=$(docker manifest inspect ghcr.io/${{ env.LOWER_CASE_REPOSITORY_OWNER }}/temp-${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }} --verbose | jq -r '.Descriptor.digest')
-        echo "OLD_REMOTE_DIGEST=$OLD_REMOTE_DIGEST" >> $GITHUB_ENV
-        echo "Remote old image digest: $OLD_REMOTE_DIGEST"
 
-    - name: Build Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: Dockerfile
-        push: true
-        provenance: false
-        no-cache: true
-        pull: true
-        tags: ghcr.io/${{ env.LOWER_CASE_REPOSITORY_OWNER }}/temp-${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
-        build-args: |
-          PYTHON_VERSION=${{ matrix.python-version }}
-
-    - name: Get remote new image digest
-      run: |
-        sleep 10
-        export DOCKER_CLI_EXPERIMENTAL=enabled
-        NEW_REMOTE_DIGEST=$(docker manifest inspect ghcr.io/${{ env.LOWER_CASE_REPOSITORY_OWNER }}/temp-${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }} --verbose | jq -r '.Descriptor.digest')
-        echo "NEW_REMOTE_DIGEST=$NEW_REMOTE_DIGEST" >> $GITHUB_ENV
-        echo "Remote new image digest: $NEW_REMOTE_DIGEST"
 
     - name: Push image if digests are different
-      if: env.OLD_REMOTE_DIGEST != env.NEW_REMOTE_DIGEST
       uses: docker/build-push-action@v5
       with:
         context: .
