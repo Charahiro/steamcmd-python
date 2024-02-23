@@ -43,38 +43,34 @@ jobs:
         echo "LOWER_CASE_REPOSITORY=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
         echo "REPOSITORY_NAME=${GITHUB_REPOSITORY#${GITHUB_REPOSITORY_OWNER}/}" >> $GITHUB_ENV
 
+    - name: Get remote old image digest
+      run: |
+        export DOCKER_CLI_EXPERIMENTAL=enabled
+        REMOTE_DIGEST=$(docker manifest inspect ghcr.io/temp-${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python-version }} --verbose | jq -r '.Descriptor.digest')
+        echo "OLD_REMOTE_DIGEST=$REMOTE_DIGEST" >> $GITHUB_ENV
+        echo "Remote old image digest: $OLD_REMOTE_DIGEST"
+
     - name: Build Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
         file: Dockerfile
-        load: true
-        push: false
+        push: true
         provenance: false
-        tags: |
-          charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }}
-          ghcr.io/${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python-version }}
-          ${{ matrix.python-version == env.latest_version && format('charahiro/{0}:latest', env.REPOSITORY_NAME) || '' }}
-          ${{ matrix.python-version == env.latest_version && format('ghcr.io/{0}:latest', env.LOWER_CASE_REPOSITORY) || '' }}
+        tags: ghcr.io/temp-${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python-version }}
         build-args: |
           PYTHON_VERSION=${{ matrix.python-version }}
 
-    - name: Get local image ID
+    - name: Get remote old image digest
       run: |
-        LOCAL_IMAGE_ID=$(docker images --no-trunc --format '{{.ID}}' charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }})
-        echo "LOCAL_IMAGE_ID=${LOCAL_IMAGE_ID}" >> $GITHUB_ENV
-        echo "Local image ID: $LOCAL_IMAGE_ID"
-
-    - name: Get remote image digest
-      run: |
+        sleep 10
         export DOCKER_CLI_EXPERIMENTAL=enabled
-        REMOTE_DIGEST=$(docker manifest inspect charahiro/${{ env.REPOSITORY_NAME }}:${{ matrix.python-version }} --verbose | jq -r '.Descriptor.digest')
-        echo "REMOTE_DIGEST=$REMOTE_DIGEST" >> $GITHUB_ENV
-        echo "Remote image digest: $REMOTE_DIGEST"
-      
+        REMOTE_DIGEST=$(docker manifest inspect ghcr.io/temp-${{ env.LOWER_CASE_REPOSITORY }}:${{ matrix.python-version }} --verbose | jq -r '.Descriptor.digest')
+        echo "NEW_REMOTE_DIGEST=$REMOTE_DIGEST" >> $GITHUB_ENV
+        echo "Remote new image digest: $NEW_REMOTE_DIGEST"
 
     - name: Push image if digests are different
-      if: env.REMOTE_DIGEST != env.LOCAL_IMAGE_ID
+      if: env.OLD_REMOTE_DIGEST != env.NEW_REMOTE_DIGEST
       uses: docker/build-push-action@v5
       with:
         context: .
