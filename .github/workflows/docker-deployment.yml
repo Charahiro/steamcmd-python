@@ -21,20 +21,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-  
+
       - name: apt update
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends --no-install-suggests \
             lib32stdc++6 lib32gcc-s1 ca-certificates
-  
+
       - name: Get SteamCMD version
         run: |
           mkdir -p ~/steamcmd
           curl -fsSL 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz' | tar xvzf - -C ~/steamcmd
           STEAMCMD_VER=$(~/steamcmd/steamcmd.sh +quit | awk '/version [0-9]+/ {print $9}')
           echo "STEAMCMD_VER=$STEAMCMD_VER" >> $GITHUB_ENV
-  
+
       - name: Get docker digest
         run: |
           original_ifs=$IFS
@@ -44,14 +44,14 @@ jobs:
             echo "PYTHON_$ver=$sha" >> $GITHUB_ENV
           done
           IFS=$original_ifs
-  
+
       - name: Check version
         id: check
         run: |
           original_ifs=$IFS
           IFS=","
           change_ver=()
-          
+
           steamcmd_old_version=$(cat version.json | jq -r ".Steamcmd")
           if [ "$steamcmd_old_version" != "$STEAMCMD_VER" ]; then
             jq --arg STEAMCMD_VER "$STEAMCMD_VER" '.Steamcmd=$STEAMCMD_VER' version.json > version.json.tmp && mv version.json.tmp version.json
@@ -72,9 +72,9 @@ jobs:
               fi
             done
           fi
-          
+
           IFS=$original_ifs
-  
+
           if [ ${#change_ver[@]} -ne 0 ]; then
             echo "Change ver=${change_ver[@]}"
             git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -88,9 +88,9 @@ jobs:
             echo "targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
             echo "latest_version=$latest_version" >> $GITHUB_OUTPUT
           else
-            echo "targets=[]"
+            echo 'targets=["null"]'
             echo "latest_version=$latest_version"
-            echo "targets=[]" >> $GITHUB_OUTPUT
+            echo 'targets=["null"]' >> $GITHUB_OUTPUT
             echo "latest_version=$latest_version" >> $GITHUB_OUTPUT
           fi
 
@@ -108,6 +108,11 @@ jobs:
         python_version: ${{ fromJSON(needs.check-version.outputs.targets) }}
 
     steps:
+
+    - name: if null then exit
+      if: ${{ matrix.python_version }} == "null"
+      run: exit 0
+
     - name: Checkout code
       uses: actions/checkout@v4
 
@@ -119,7 +124,7 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-    
+
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v3
       with:
