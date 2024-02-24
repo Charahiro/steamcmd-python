@@ -15,8 +15,8 @@ jobs:
       latest_version: '3.12'
     
     outputs:
-      targets: ${{ steps.check-version.outputs.targets }}
-      latest_version: ${{ steps.check-version.outputs.latest_version }}
+      targets: ${{ steps.check.outputs.targets }}
+      latest_version: ${{ steps.check.outputs.latest_version }}
     
     steps:
       - name: Checkout code
@@ -46,7 +46,7 @@ jobs:
           IFS=$original_ifs
   
       - name: Check version
-        id: check-version
+        id: check
         run: |
           original_ifs=$IFS
           IFS=","
@@ -83,6 +83,8 @@ jobs:
             git commit -m "change version"
             git push origin main
 
+            echo "targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)"
+            echo "latest_version=$latest_version"
             echo "targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
             echo "latest_version=$latest_version" >> $GITHUB_OUTPUT
           else
