@@ -97,6 +97,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    needs:
+      - check-version
     env:
       latest_version: ${{ needs.check-version.outputs.latest_version }}
     strategy:
