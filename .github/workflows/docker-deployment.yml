@@ -111,10 +111,6 @@ jobs:
       - name: Echo version
         run: echo "python_version=${{ matrix.python_version }}"
 
-      - name: if null then exit
-        if: ${{ matrix.python_version == 'null' }}
-        run: exit 0
-
       - name: Checkout code
         if: ${{ matrix.python_version != 'null' }}
         uses: actions/checkout@v4
