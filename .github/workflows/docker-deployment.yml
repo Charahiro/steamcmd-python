@@ -14,6 +14,10 @@ jobs:
       python_target: "3.10,3.11,3.12"
       latest_version: '3.12'
     
+    outputs:
+      targets: ${{ steps.check-version.outputs.targets }}
+      latest_version: ${{ steps.check-version.outputs.latest_version }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -92,10 +96,10 @@ jobs:
       contents: read
       packages: write
     env:
-      latest_version: ${{ steps.check-version.outputs.latest_version }}
+      latest_version: ${{ needs.check-version.outputs.latest_version }}
     strategy:
       matrix:
-        python_version: ${{ fromJson(steps.check-version.outputs.targets) }}
+        python_version: ${{ fromJson(needs.check-version.outputs.targets) }}
 
     steps:
     - name: Checkout code
