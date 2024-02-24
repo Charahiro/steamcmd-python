@@ -99,7 +99,7 @@ jobs:
       latest_version: ${{ needs.check-version.outputs.latest_version }}
     strategy:
       matrix:
-        python_version: ${{ fromJson(needs.check-version.outputs.targets) }}
+        python_version: ${{ fromJSON(needs.check-version.outputs.targets) }}
 
     steps:
     - name: Checkout code
