@@ -82,12 +82,17 @@ jobs:
             git add .
             git commit -m "change version"
             git push origin main
-          fi
 
-          echo "targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)"
-          echo "latest_version=$latest_version"
-          echo "targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
-          echo "latest_version=$latest_version" >> $GITHUB_OUTPUT
+            echo "targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)"
+            echo "latest_version=$latest_version"
+            echo "targets=$(printf '%s\n' "${change_ver[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
+            echo "latest_version=$latest_version" >> $GITHUB_OUTPUT
+          else
+            echo "targets=[]"
+            echo "latest_version=$latest_version"
+            echo "targets=[]" >> $GITHUB_OUTPUT
+            echo "latest_version=$latest_version" >> $GITHUB_OUTPUT
+          fi
 
   build-and-push:
     runs-on: ubuntu-latest
