@@ -32,7 +32,7 @@ jobs:
         run: |
           mkdir -p ~/steamcmd
           curl -fsSL 'https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz' | tar xvzf - -C ~/steamcmd
-          STEAMCMD_VER=$(~/steamcmd/steamcmd.sh +quit | awk '/version [0-9]+/ {print $9}')
+          STEAMCMD_VER=$(~/steamcmd/steamcmd.sh +quit | awk '/version [0-9]+/ {print $NF}')
           echo "STEAMCMD_VER=$STEAMCMD_VER" >> $GITHUB_ENV
 
       - name: Get docker digest
