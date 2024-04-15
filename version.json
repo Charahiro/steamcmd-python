@@ -2,7 +2,7 @@
   "Steamcmd": "1709846822",
   "Python": {
     "3.10": "sha256:3e36db268f77cf5b62d5b1552ddf83064831fccc0cd15aa377b37a6f6b3d8426",
-    "3.11": "",
+    "3.11": "sha256:c2ff2b8a37c1d0fef24e9bd4353c7f93878b4ea96edd4082b9e3667a6cb8c186",
     "3.12": "sha256:47fc40de7ad3d9690c3c4ebc0f93230d70c489b53e053e00e8abd327ac1137d4"
   }
 }
