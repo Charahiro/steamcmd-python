@@ -11,8 +11,8 @@ jobs:
     permissions:
       contents: write
     env:
-      python_target: "3.10,3.11,3.12"
-      latest_version: '3.12'
+      python_target: "3.10,3.11,3.12,3.13"
+      latest_version: '3.13'
     
     outputs:
       targets: ${{ steps.check.outputs.targets }}
